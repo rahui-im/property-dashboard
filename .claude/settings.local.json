@@ -31,7 +31,9 @@
       "Bash(done)",
       "Bash(cp:*)",
       "Bash(npm run dev:*)",
-      "Bash(start test_search.html)"
+      "Bash(start test_search.html)",
+      "Bash(curl:*)",
+      "Bash(start http://localhost:3000)"
     ],
     "deny": [],
     "ask": [],

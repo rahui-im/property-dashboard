@@ -12,9 +12,13 @@ export default function SearchResults({ results }) {
         color: '#856404',
         padding: '20px',
         borderRadius: '10px',
-        marginBottom: '20px'
+        marginBottom: '20px',
+        textAlign: 'center'
       }}>
-        ⚠️ {results.error}
+        <h3 style={{ fontSize: '24px', marginBottom: '10px' }}>⚠️ {results.error}</h3>
+        {results.message && (
+          <p style={{ fontSize: '16px', margin: '0' }}>{results.message}</p>
+        )}
       </div>
     );
   }
@@ -233,6 +237,7 @@ export default function SearchResults({ results }) {
                     fontSize: '14px'
                   }}>
                     📍 {property.address}
+                    {property.building && ` ${property.building}`}
                   </p>
                   
                   <div style={{ 

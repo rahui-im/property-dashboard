@@ -16,11 +16,44 @@ export default function Home() {
     setHasSearched(true);
     
     try {
-      // 실시간 검색 API 호출 - 네이버, 직방, 다방 동시 검색
-      console.log('검색 시작:', address);
-      const response = await fetch(`/api/realtime-search?address=${encodeURIComponent(address)}&platforms=naver,zigbang,dabang`);
+      // 1. 먼저 주소를 좌표로 변환
+      console.log('주소 좌표 변환 시작:', address);
+      const geocodeResponse = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
+      const geocodeData = await geocodeResponse.json();
+      console.log('좌표 변환 결과:', geocodeData);
+      
+      // 좌표 변환 실패 시 에러 메시지 표시
+      if (!geocodeData.success) {
+        setSearchResults({ 
+          error: geocodeData.error || '해당 주소의 정보 없음',
+          message: geocodeData.message || '정확한 주소를 입력해주세요',
+          query: address,
+          totalCount: 0,
+          properties: []
+        });
+        return;
+      }
+      
+      // 2. 좌표를 포함하여 실시간 검색 API 호출 - 네이버, 직방, 다방 동시 검색
+      console.log('매물 검색 시작:', address);
+      let searchUrl = `/api/realtime-search?address=${encodeURIComponent(address)}&platforms=naver,zigbang,dabang`;
+      
+      // 좌표가 있으면 추가
+      if (geocodeData.lat && geocodeData.lng) {
+        searchUrl += `&lat=${geocodeData.lat}&lng=${geocodeData.lng}`;
+      }
+      
+      const response = await fetch(searchUrl);
       const data = await response.json();
-      console.log('API 응답:', data);
+      console.log('매물 검색 결과:', data);
+      
+      // 좌표 정보를 결과에 추가
+      data.coordinates = {
+        lat: geocodeData.lat,
+        lng: geocodeData.lng,
+        address: geocodeData.roadAddress || geocodeData.jibunAddress || geocodeData.address
+      };
+      
       setSearchResults(data);
     } catch (error) {
       console.error('Search error:', error);
@@ -37,10 +70,10 @@ export default function Home() {
   };
 
   const exampleAddresses = [
+    "삼성동 150-11",
     "삼성동 151-7",
-    "테헤란로 521",
-    "봉은사로 114",
-    "삼성동 159"
+    "삼성동 159",
+    "테헤란로 521"
   ];
 
   return (

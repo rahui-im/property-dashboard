@@ -120,13 +120,44 @@ async function searchNaver(address) {
   try {
     console.log('[Naver] 검색 시작:', address);
     
+    // 먼저 네이버 지도 API로 주소를 좌표로 변환
+    const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID || 'gs49gWmH9D2UbRfED2r_';
+    const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET || '2onfjVGamO';
+    
+    // 네이버 지도 Geocoding API로 주소를 좌표로 변환
+    const geocodeUrl = `https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query=${encodeURIComponent(address)}`;
+    
+    const geocodeResponse = await fetch(geocodeUrl, {
+      headers: {
+        'X-NCP-APIGW-API-KEY-ID': NAVER_CLIENT_ID,
+        'X-NCP-APIGW-API-KEY': NAVER_CLIENT_SECRET
+      }
+    });
+    
+    let lat = 37.5172;  // 기본값: 삼성동
+    let lng = 127.0473;
+    let fullAddress = '서울 강남구 삼성동';
+    
+    if (geocodeResponse.ok) {
+      const geocodeData = await geocodeResponse.json();
+      if (geocodeData.addresses && geocodeData.addresses.length > 0) {
+        const location = geocodeData.addresses[0];
+        lat = parseFloat(location.y);
+        lng = parseFloat(location.x);
+        fullAddress = location.roadAddress || location.jibunAddress || address;
+        console.log('[Naver] 좌표 변환 성공:', fullAddress, lat, lng);
+      }
+    } else {
+      console.log('[Naver] Geocoding 실패, 기본 좌표 사용');
+    }
+    
     // Vercel 환경에서는 프록시 API 사용
     if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
       const baseUrl = process.env.VERCEL_URL 
         ? `https://${process.env.VERCEL_URL}` 
         : 'https://property-dashboard-lime.vercel.app';
       
-      const response = await fetch(`${baseUrl}/api/proxy-naver?address=${encodeURIComponent(address)}`);
+      const response = await fetch(`${baseUrl}/api/proxy-naver?address=${encodeURIComponent(address)}&lat=${lat}&lng=${lng}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -136,13 +167,23 @@ async function searchNaver(address) {
         }
       }
       
-      // 프록시도 실패하면 Mock 데이터
-      return getMockNaverData(address);
+      // 프록시도 실패하면 빈 배열 반환
+      console.log('[Naver] Vercel 프록시 실패, 실제 데이터 없음');
+      return [];
     }
     
-    // 로컬 환경에서는 직접 API 호출
-    const lat = 37.5172;
-    const lng = 127.0473;
+    // 로컬 환경에서는 프록시 API 사용
+    const proxyResponse = await fetch(`http://localhost:3000/api/proxy-naver?address=${encodeURIComponent(address)}&lat=${lat}&lng=${lng}`);
+    
+    if (proxyResponse.ok) {
+      const proxyData = await proxyResponse.json();
+      if (proxyData.success && proxyData.properties) {
+        console.log('[Naver] 로컬 프록시로 매물 수신:', proxyData.properties.length);
+        return proxyData.properties;
+      }
+    }
+    
+    // 프록시도 실패하면 네이버 부동산 직접 호출 시도
     const btm = lat - 0.01;
     const top = lat + 0.01;
     const lft = lng - 0.01;
@@ -168,11 +209,12 @@ async function searchNaver(address) {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json, text/javascript, */*; q=0.01'
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Referer': 'https://m.land.naver.com/'
       }
     });
     
-    console.log('[Naver] 응답 상태:', response.status);
+    console.log('[Naver] 부동산 API 응답 상태:', response.status);
 
     if (response.ok) {
       const data = await response.json();
@@ -185,7 +227,7 @@ async function searchNaver(address) {
           platform: 'naver',
           title: item.atclNm || item.bildNm || '네이버 매물',
           building: item.bildNm || '',
-          address: `서울 강남구 삼성동`,
+          address: fullAddress,
           price: parseInt(String(item.prc || 0).replace(/[^\d]/g, '')) || 0,
           price_string: item.prc || '0',
           area: parseFloat(item.spc1 || 0),
@@ -206,7 +248,7 @@ async function searchNaver(address) {
     }
   } catch (error) {
     console.error('[Naver] 검색 오류:', error.message);
-    return getMockNaverData(address);
+    return [];
   }
   
   return properties;
@@ -234,7 +276,18 @@ async function searchZigbang(address) {
       }
     }
     
-    // 로컬 환경에서는 직접 API 호출
+    // 로컬 환경에서는 프록시 API 사용
+    const proxyResponse = await fetch(`http://localhost:3000/api/proxy-zigbang?address=${encodeURIComponent(address)}`);
+    
+    if (proxyResponse.ok) {
+      const proxyData = await proxyResponse.json();
+      if (proxyData.success && proxyData.properties) {
+        console.log('[Zigbang] 로컬 프록시로 매물 수신:', proxyData.properties.length);
+        return proxyData.properties;
+      }
+    }
+    
+    // 프록시도 실패하면 직접 호출 시도
     const response = await fetch('https://apis.zigbang.com/v2/items?domain=zigbang&geohash=wydm6&zoom=15', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -301,7 +354,18 @@ async function searchDabang(address) {
       }
     }
     
-    // 로컬 환경에서는 직접 API 호출
+    // 로컬 환경에서는 프록시 API 사용
+    const proxyResponse = await fetch(`http://localhost:3000/api/proxy-dabang?address=${encodeURIComponent(address)}`);
+    
+    if (proxyResponse.ok) {
+      const proxyData = await proxyResponse.json();
+      if (proxyData.success && proxyData.properties) {
+        console.log('[Dabang] 로컬 프록시로 매물 수신:', proxyData.properties.length);
+        return proxyData.properties;
+      }
+    }
+    
+    // 프록시도 실패하면 직접 호출 시도
     const response = await fetch('https://www.dabangapp.com/api/3/room/list/search-complex', {
       method: 'POST',
       headers: {
@@ -500,116 +564,6 @@ async function searchSpeedbank(address) {
   return properties;
 }
 
-// Mock 데이터 (Vercel CORS 문제 대응)
-function getMockNaverData(address) {
-  const mockProperties = [
-    {
-      id: 'NAVER_MOCK_1',
-      platform: 'naver',
-      title: '래미안 라클래시',
-      building: '101동',
-      address: '서울 강남구 삼성동',
-      price: 380000,
-      price_string: '38억',
-      area: 149,
-      area_pyeong: 45,
-      floor: '15/25',
-      type: '아파트',
-      trade_type: '매매',
-      lat: 37.5172,
-      lng: 127.0473,
-      description: '역세권 대단지 아파트',
-      url: 'https://m.land.naver.com',
-      collected_at: new Date().toISOString()
-    },
-    {
-      id: 'NAVER_MOCK_2',
-      platform: 'naver',
-      title: '아이파크 삼성',
-      building: '102동',
-      address: '서울 강남구 삼성동',
-      price: 280000,
-      price_string: '28억',
-      area: 113,
-      area_pyeong: 34,
-      floor: '10/20',
-      type: '아파트',
-      trade_type: '매매',
-      lat: 37.5162,
-      lng: 127.0483,
-      description: '남향 한강뷰',
-      url: 'https://m.land.naver.com',
-      collected_at: new Date().toISOString()
-    },
-    {
-      id: 'NAVER_MOCK_3',
-      platform: 'naver',
-      title: '삼성동 센트럴 아이파크',
-      building: '201동',
-      address: '서울 강남구 삼성동',
-      price: 85000,
-      price_string: '8.5억',
-      area: 84,
-      area_pyeong: 25,
-      floor: '5/15',
-      type: '아파트',
-      trade_type: '전세',
-      lat: 37.5182,
-      lng: 127.0463,
-      description: '풀옵션 즉시입주',
-      url: 'https://m.land.naver.com',
-      collected_at: new Date().toISOString()
-    },
-    {
-      id: 'NAVER_MOCK_4',
-      platform: 'naver',
-      title: '트레이드타워 오피스텔',
-      building: 'A동',
-      address: '서울 강남구 삼성동',
-      price: 5000,
-      price_string: '5천만원',
-      area: 45,
-      area_pyeong: 14,
-      floor: '12/30',
-      type: '오피스텔',
-      trade_type: '월세',
-      monthly_rent: 350,
-      lat: 37.5152,
-      lng: 127.0493,
-      description: '코엑스 도보 5분',
-      url: 'https://m.land.naver.com',
-      collected_at: new Date().toISOString()
-    },
-    {
-      id: 'NAVER_MOCK_5',
-      platform: 'naver',
-      title: '파르나스타워',
-      building: 'B동',
-      address: '서울 강남구 삼성동',
-      price: 8000,
-      price_string: '8천만원',
-      area: 65,
-      area_pyeong: 20,
-      floor: '25/40',
-      type: '오피스텔',
-      trade_type: '월세',
-      monthly_rent: 500,
-      lat: 37.5142,
-      lng: 127.0503,
-      description: '고층 전망 우수',
-      url: 'https://m.land.naver.com',
-      collected_at: new Date().toISOString()
-    }
-  ];
-  
-  // 주소 필터링
-  return mockProperties.filter(p => 
-    address.toLowerCase().split(' ').some(term => 
-      p.address.toLowerCase().includes(term) || 
-      p.title.toLowerCase().includes(term)
-    )
-  );
-}
 
 function calculateStats(properties) {
   const stats = {

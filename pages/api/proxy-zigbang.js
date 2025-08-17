@@ -14,19 +14,39 @@ export default async function handler(req, res) {
 
   const { address = '삼성동' } = req.query;
   
+  // 주소로 좌표 찾기
+  let lat = 37.5172;
+  let lng = 127.0473;
+  let geohash = 'wydm6';
+  
+  // 특정 주소별 정확한 좌표와 geohash
+  const addressMap = {
+    '삼성동 150-11': { lat: 37.5086, lng: 127.0631, geohash: 'wydm6' },
+    '삼성동150-11': { lat: 37.5086, lng: 127.0631, geohash: 'wydm6' },
+    '삼성동 151-7': { lat: 37.5089, lng: 127.0635, geohash: 'wydm6' },
+    '삼성동': { lat: 37.5172, lng: 127.0473, geohash: 'wydm6' },
+    '역삼동': { lat: 37.5006, lng: 127.0365, geohash: 'wydm5' },
+    '청담동': { lat: 37.5197, lng: 127.0474, geohash: 'wydm7' },
+    '논현동': { lat: 37.5112, lng: 127.0314, geohash: 'wydm4' },
+    '대치동': { lat: 37.4941, lng: 127.0625, geohash: 'wydm3' }
+  };
+  
+  // 주소 정규화
+  const normalizedAddress = address.replace(/\s+/g, ' ').trim();
+  
+  // 주소 매칭
+  for (const [key, coords] of Object.entries(addressMap)) {
+    if (normalizedAddress.includes(key) || key.includes(normalizedAddress)) {
+      lat = coords.lat;
+      lng = coords.lng;
+      geohash = coords.geohash;
+      console.log(`[Proxy] 직방 주소 매칭: ${key} -> geohash: ${geohash}`);
+      break;
+    }
+  }
+  
   try {
-    console.log('[Proxy] 직방 검색:', address);
-    
-    // 직방 API - 삼성동 지역 geohash
-    const geohashMap = {
-      '삼성동': 'wydm6',
-      '역삼동': 'wydm5',
-      '청담동': 'wydm7',
-      '논현동': 'wydm4',
-      '대치동': 'wydm3'
-    };
-    
-    const geohash = geohashMap[address] || 'wydm6';
+    console.log('[Proxy] 직방 검색:', address, 'geohash:', geohash);
     
     // 직방 매물 리스트 API
     const response = await fetch(`https://apis.zigbang.com/v2/items?domain=zigbang&geohash=${geohash}&zoom=16`, {
@@ -43,8 +63,23 @@ export default async function handler(req, res) {
       
       console.log('[Proxy] 직방 매물 수:', items.length);
       
-      // 데이터 가공
-      const properties = items.slice(0, 20).map(item => ({
+      // 데이터 가공 및 거리 필터링
+      const properties = [];
+      
+      for (const item of items) {
+        // 거리 계산
+        const itemLat = item.lat || lat;
+        const itemLng = item.lng || lng;
+        const distance = Math.sqrt(
+          Math.pow(itemLat - lat, 2) + 
+          Math.pow(itemLng - lng, 2)
+        );
+        
+        // 특정 주소 검색 시 가까운 매물만 포함
+        if (normalizedAddress.includes('150-11') && distance > 0.005) continue;
+        if (normalizedAddress.includes('151-7') && distance > 0.005) continue;
+        
+        properties.push({
         id: `ZIGBANG_${item.item_id || Date.now()}`,
         platform: 'zigbang',
         title: item.title || `직방 매물`,
@@ -60,9 +95,16 @@ export default async function handler(req, res) {
         lng: item.lng || 127.0473,
         description: item.description || '',
         images: item.images || [],
-        url: `https://www.zigbang.com/home/oneroom/${item.item_id}`,
-        collected_at: new Date().toISOString()
-      }));
+          url: `https://www.zigbang.com/home/oneroom/${item.item_id}`,
+          collected_at: new Date().toISOString(),
+          distance: distance
+        });
+        
+        if (properties.length >= 20) break;
+      }
+      
+      // 거리순 정렬
+      properties.sort((a, b) => (a.distance || 0) - (b.distance || 0));
       
       res.status(200).json({
         success: true,
