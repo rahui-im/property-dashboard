@@ -12,12 +12,12 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { address = '삼성동' } = req.query;
+  const { address = '삼성동', lat: queryLat, lng: queryLng } = req.query;
   
-  // 주소로 좌표 찾기
-  let lat = 37.5172;
-  let lng = 127.0473;
-  let searchRadius = 0.005; // 기본 반경 (약 500m)
+  // 좌표 설정 (쿼리 파라미터로 받은 값 우선 사용)
+  let lat = queryLat ? parseFloat(queryLat) : 37.5172;
+  let lng = queryLng ? parseFloat(queryLng) : 127.0473;
+  let searchRadius = 0.01; // 기본 반경 (약 1km)
   
   // 특정 주소별 정확한 좌표
   const addressMap = {
@@ -36,14 +36,16 @@ export default async function handler(req, res) {
   // 주소 정규화 (공백 제거)
   const normalizedAddress = address.replace(/\s+/g, ' ').trim();
   
-  // 주소 매칭
-  for (const [key, coords] of Object.entries(addressMap)) {
-    if (normalizedAddress.includes(key) || key.includes(normalizedAddress)) {
-      lat = coords.lat;
-      lng = coords.lng;
-      searchRadius = coords.radius;
-      console.log(`[Proxy] 주소 매칭: ${key} -> 좌표: ${lat}, ${lng}`);
-      break;
+  // 쿼리 파라미터로 좌표를 받지 못한 경우에만 주소 매칭
+  if (!queryLat || !queryLng) {
+    for (const [key, coords] of Object.entries(addressMap)) {
+      if (normalizedAddress.includes(key) || key.includes(normalizedAddress)) {
+        lat = coords.lat;
+        lng = coords.lng;
+        searchRadius = coords.radius;
+        console.log(`[Proxy] 주소 매칭: ${key} -> 좌표: ${lat}, ${lng}`);
+        break;
+      }
     }
   }
   
@@ -61,7 +63,7 @@ export default async function handler(req, res) {
     const params = new URLSearchParams({
       rletTpCd: 'APT:OPST:VL:DDDGG:OR:ABYG:JGC',
       tradTpCd: 'A1:B1:B2',
-      z: 16,
+      z: 15,
       lat: lat,
       lon: lng,
       btm: btm,
@@ -91,7 +93,7 @@ export default async function handler(req, res) {
       // 데이터 가공 및 거리 필터링
       const properties = [];
       
-      for (const item of items) {
+      for (const item of items.slice(0, 50)) { // 최대 50개까지만 처리
         // 거리 계산 (간단한 유클리드 거리)
         const distance = Math.sqrt(
           Math.pow((item.lat || lat) - lat, 2) + 
@@ -103,11 +105,11 @@ export default async function handler(req, res) {
         if (normalizedAddress.includes('삼성동 151') && distance > 0.005) continue;
         
         properties.push({
-        id: `NAVER_${item.atclNo || Date.now()}_${Math.random()}`,
-        platform: 'naver',
-        title: item.atclNm || item.bildNm || '네이버 매물',
-        building: item.bildNm || '',
-        address: `서울 강남구 ${address}`,
+          id: `NAVER_${item.atclNo || Date.now()}_${Math.random()}`,
+          platform: 'naver',
+          title: item.atclNm || item.bildNm || '네이버 매물',
+          building: item.bildNm || '',
+          address: address || '주소 정보 없음',
         price: parseInt(String(item.prc || 0).replace(/[^\d]/g, '')) || 0,
         price_string: item.prc || '0',
         area: parseFloat(item.spc1 || 0),
