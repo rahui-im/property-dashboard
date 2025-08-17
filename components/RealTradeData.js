@@ -15,18 +15,53 @@ export default function RealTradeData({ address }) {
   const fetchRealTradeData = async () => {
     setLoading(true);
     try {
-      // 매매 데이터 조회
-      const tradeResponse = await fetch(`/api/molit-trades?address=${encodeURIComponent(address)}&type=trade`);
-      if (tradeResponse.ok) {
-        const tradeResult = await tradeResponse.json();
-        setTradeData(tradeResult);
-      }
-
-      // 전월세 데이터 조회
-      const rentResponse = await fetch(`/api/molit-trades?address=${encodeURIComponent(address)}&type=rent`);
-      if (rentResponse.ok) {
-        const rentResult = await rentResponse.json();
-        setRentData(rentResult);
+      // 여러 API 엔드포인트 시도 (fallback 전략)
+      const apiEndpoints = [
+        '/api/molit-trades-v2',  // 새로운 API (apis.data.go.kr)
+        '/api/molit-trades'       // 기존 API (openapi.molit.go.kr)
+      ];
+      
+      let tradeSuccess = false;
+      let rentSuccess = false;
+      
+      // 각 엔드포인트를 순서대로 시도
+      for (const endpoint of apiEndpoints) {
+        // 매매 데이터 조회
+        if (!tradeSuccess) {
+          try {
+            const tradeResponse = await fetch(`${endpoint}?address=${encodeURIComponent(address)}&type=trade`);
+            if (tradeResponse.ok) {
+              const tradeResult = await tradeResponse.json();
+              if (tradeResult.totalCount > 0) {
+                setTradeData(tradeResult);
+                tradeSuccess = true;
+                console.log(`매매 데이터 성공: ${endpoint}`);
+              }
+            }
+          } catch (e) {
+            console.log(`${endpoint} 매매 실패:`, e.message);
+          }
+        }
+        
+        // 전월세 데이터 조회
+        if (!rentSuccess) {
+          try {
+            const rentResponse = await fetch(`${endpoint}?address=${encodeURIComponent(address)}&type=rent`);
+            if (rentResponse.ok) {
+              const rentResult = await rentResponse.json();
+              if (rentResult.totalCount > 0) {
+                setRentData(rentResult);
+                rentSuccess = true;
+                console.log(`전월세 데이터 성공: ${endpoint}`);
+              }
+            }
+          } catch (e) {
+            console.log(`${endpoint} 전월세 실패:`, e.message);
+          }
+        }
+        
+        // 둘 다 성공하면 더 이상 시도하지 않음
+        if (tradeSuccess && rentSuccess) break;
       }
     } catch (error) {
       console.error('실거래가 조회 오류:', error);
