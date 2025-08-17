@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import MapView from './MapView';
 
 export default function SearchResults({ results }) {
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [showMap, setShowMap] = useState(true);
   
   if (!results) return null;
   
@@ -72,6 +74,38 @@ export default function SearchResults({ results }) {
 
   return (
     <div>
+      {/* 지도 표시 토글 버튼 */}
+      <div style={{
+        marginBottom: '20px',
+        textAlign: 'right'
+      }}>
+        <button
+          onClick={() => setShowMap(!showMap)}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            border: 'none',
+            borderRadius: '25px',
+            background: showMap ? '#667eea' : '#f0f0f0',
+            color: showMap ? 'white' : '#666',
+            cursor: 'pointer',
+            transition: 'all 0.3s'
+          }}
+        >
+          {showMap ? '🗺️ 지도 숨기기' : '🗺️ 지도 보기'}
+        </button>
+      </div>
+
+      {/* 지도 뷰 */}
+      {showMap && results.coordinates && (
+        <MapView 
+          address={results.query}
+          lat={results.coordinates.lat}
+          lng={results.coordinates.lng}
+          properties={results.properties}
+        />
+      )}
+
       {/* 검색 결과 요약 */}
       <div style={{
         background: 'white',
