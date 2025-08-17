@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import MapView from './MapView';
+import RealTradeData from './RealTradeData';
 
 export default function SearchResults({ results }) {
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -105,6 +106,9 @@ export default function SearchResults({ results }) {
           properties={results.properties}
         />
       )}
+
+      {/* 국토교통부 실거래가 데이터 */}
+      <RealTradeData address={results.query} />
 
       {/* 검색 결과 요약 */}
       <div style={{

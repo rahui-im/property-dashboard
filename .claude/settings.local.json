@@ -34,7 +34,9 @@
       "Bash(start test_search.html)",
       "Bash(curl:*)",
       "Bash(start http://localhost:3000)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:www.data.go.kr)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": [],
