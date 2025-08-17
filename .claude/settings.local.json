@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(source:*)",
+      "Bash(playwright install:*)",
+      "Bash(dir:*)",
+      "Bash(start samsung1dong_report_20250817_082809.html)",
+      "Bash(start samsung1dong_full_20250817_083909.html)",
+      "Bash(pip show:*)",
+      "Bash(start final_samsung1dong_report_20250817_092702.html)",
+      "Bash(git init:*)",
+      "Bash(mkdir:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git remote remove:*)",
+      "Bash(start https://github.com/rahui-im/property-dashboard)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)",
+      "Bash(grep:*)",
+      "Bash(mv:*)",
+      "Bash(tree:*)",
+      "Bash(touch:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\Users\\imhye"
+    ]
+  }
+}

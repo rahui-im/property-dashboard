@@ -34,34 +34,42 @@ wheels/
 .env.local
 
 # Logs
+logs/
 *.log
 
-# Data files (too large)
-*.json
-!package.json
-!package-lock.json
-!tsconfig.json
-!vercel.json
+# Data files
+data/raw/*.json
+data/processed/*.json
+data/reports/*.html
+data/screenshots/*.png
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/reports/.gitkeep
+!data/screenshots/.gitkeep
 
 # Test files
 test_*.py
 *.test.py
 
-# Screenshots
-*.png
-*.jpg
-*.jpeg
-
 # Temporary
 *.tmp
 *.temp
+.next/
+out/
 
 # Node
 node_modules/
-.next/
-out/
 .vercel/
+frontend/.next/
+frontend/out/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Docker
+docker/volumes/
+
+# Sensitive
+secrets/
+credentials/
