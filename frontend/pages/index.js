@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Dashboard from '../components/Dashboard';
 import AddressSearch from '../components/AddressSearch';
+import RealtimeSearch from '../components/RealtimeSearch';
 import SearchResults from '../components/SearchResults';
 
 export default function Home() {
@@ -110,7 +111,7 @@ export default function Home() {
           {/* 컨텐츠 영역 */}
           {viewMode === 'search' ? (
             <>
-              <AddressSearch onSearch={handleSearch} />
+              <RealtimeSearch onSearch={handleSearch} />
               <SearchResults results={searchResults} />
             </>
           ) : (

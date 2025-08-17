@@ -17,6 +17,7 @@ psycopg2-binary==2.9.9
 fastapi==0.104.1
 uvicorn==0.24.0
 pydantic==2.5.0
+httpx==0.25.2
 
 # 비동기 처리
 aiohttp==3.9.0
