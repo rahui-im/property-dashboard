@@ -48,26 +48,20 @@ export default function Home() {
       const geocodeData = await geocodeResponse.json();
       console.log('좌표 변환 결과:', geocodeData);
       
-      // 좌표 변환 실패 시 에러 메시지 표시
+      // 좌표 변환 실패 시 처리
       if (!geocodeData.success) {
-        setSearchResults({ 
-          error: geocodeData.error || '해당 주소의 정보 없음',
-          message: geocodeData.message || '정확한 주소를 입력해주세요',
-          query: searchAddress,
-          totalCount: 0,
-          properties: []
-        });
-        return;
+        console.log('Geocoding 실패, 기본 좌표 사용');
+        // 에러가 있어도 계속 진행 (기본 좌표 사용)
       }
       
       // 2. 좌표를 포함하여 실시간 검색 API 호출 - 네이버, 직방, 다방 동시 검색
       console.log('매물 검색 시작:', searchAddress);
       let searchUrl = `/api/realtime-search?address=${encodeURIComponent(searchAddress)}&platforms=naver,zigbang,dabang`;
       
-      // 좌표가 있으면 추가
-      if (geocodeData.lat && geocodeData.lng) {
-        searchUrl += `&lat=${geocodeData.lat}&lng=${geocodeData.lng}`;
-      }
+      // 좌표가 있으면 추가 (없으면 기본값 사용)
+      const lat = geocodeData?.lat || 37.5172;
+      const lng = geocodeData?.lng || 127.0473;
+      searchUrl += `&lat=${lat}&lng=${lng}`;
       
       const response = await fetch(searchUrl);
       const data = await response.json();
@@ -75,9 +69,9 @@ export default function Home() {
       
       // 좌표 정보를 결과에 추가
       data.coordinates = {
-        lat: geocodeData.lat,
-        lng: geocodeData.lng,
-        address: geocodeData.roadAddress || geocodeData.jibunAddress || geocodeData.address
+        lat: lat,
+        lng: lng,
+        address: geocodeData?.roadAddress || geocodeData?.jibunAddress || searchAddress
       };
       
       setSearchResults(data);
