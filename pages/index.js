@@ -1,24 +1,50 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import SearchResults from '../components/SearchResults';
+import RegionSelector from '../components/RegionSelector';
 
 export default function Home() {
   const [address, setAddress] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState({});
+  const [searchMode, setSearchMode] = useState('region'); // 'region' or 'address'
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!address.trim()) return;
+    e?.preventDefault();
+    
+    // 지역 선택 모드일 때
+    if (searchMode === 'region') {
+      if (!selectedRegion.province) {
+        alert('최소한 시/도를 선택해주세요');
+        return;
+      }
+    } else {
+      // 주소 입력 모드일 때
+      if (!address.trim()) return;
+    }
 
     setIsSearching(true);
     setHasSearched(true);
     
     try {
+      let searchAddress = '';
+      
+      if (searchMode === 'region') {
+        searchAddress = selectedRegion.fullAddress || '';
+      } else {
+        searchAddress = address;
+      }
+      
+      if (!searchAddress) {
+        alert('검색할 지역을 선택하거나 주소를 입력해주세요');
+        return;
+      }
+      
       // 1. 먼저 주소를 좌표로 변환
-      console.log('주소 좌표 변환 시작:', address);
-      const geocodeResponse = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
+      console.log('주소 좌표 변환 시작:', searchAddress);
+      const geocodeResponse = await fetch(`/api/geocode?address=${encodeURIComponent(searchAddress)}`);
       const geocodeData = await geocodeResponse.json();
       console.log('좌표 변환 결과:', geocodeData);
       
@@ -27,7 +53,7 @@ export default function Home() {
         setSearchResults({ 
           error: geocodeData.error || '해당 주소의 정보 없음',
           message: geocodeData.message || '정확한 주소를 입력해주세요',
-          query: address,
+          query: searchAddress,
           totalCount: 0,
           properties: []
         });
@@ -35,8 +61,8 @@ export default function Home() {
       }
       
       // 2. 좌표를 포함하여 실시간 검색 API 호출 - 네이버, 직방, 다방 동시 검색
-      console.log('매물 검색 시작:', address);
-      let searchUrl = `/api/realtime-search?address=${encodeURIComponent(address)}&platforms=naver,zigbang,dabang`;
+      console.log('매물 검색 시작:', searchAddress);
+      let searchUrl = `/api/realtime-search?address=${encodeURIComponent(searchAddress)}&platforms=naver,zigbang,dabang`;
       
       // 좌표가 있으면 추가
       if (geocodeData.lat && geocodeData.lng) {
@@ -70,17 +96,17 @@ export default function Home() {
   };
 
   const exampleAddresses = [
-    "삼성동 150-11",
-    "삼성동 151-7",
-    "삼성동 159",
-    "테헤란로 521"
+    "서울특별시 강남구 삼성동",
+    "서울특별시 서초구 서초동",
+    "경기도 성남시 분당구",
+    "인천광역시 연수구 송도동"
   ];
 
   return (
     <>
       <Head>
-        <title>삼성동 부동산 검색</title>
-        <meta name="description" content="강남구 삼성동 부동산 매물 검색 서비스" />
+        <title>전국 부동산 검색</title>
+        <meta name="description" content="전국 부동산 매물 통합 검색 서비스" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
       </Head>
@@ -118,7 +144,7 @@ export default function Home() {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
-                🏢 삼성동 부동산 검색
+                🏢 전국 부동산 검색
               </h1>
               
               <p style={{
@@ -126,61 +152,118 @@ export default function Home() {
                 fontSize: '18px',
                 marginBottom: '40px'
               }}>
-                원하시는 주소를 입력하고 매물을 찾아보세요
+                지역을 선택하거나 주소를 입력하여 매물을 찾아보세요
               </p>
 
+              {/* 검색 모드 선택 탭 */}
+              <div style={{
+                display: 'flex',
+                gap: '10px',
+                marginBottom: '30px',
+                justifyContent: 'center'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setSearchMode('region')}
+                  style={{
+                    padding: '12px 30px',
+                    fontSize: '16px',
+                    border: 'none',
+                    borderRadius: '25px',
+                    background: searchMode === 'region' 
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      : '#f0f0f0',
+                    color: searchMode === 'region' ? 'white' : '#666',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    fontWeight: searchMode === 'region' ? 'bold' : 'normal'
+                  }}
+                >
+                  📍 지역으로 검색
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchMode('address')}
+                  style={{
+                    padding: '12px 30px',
+                    fontSize: '16px',
+                    border: 'none',
+                    borderRadius: '25px',
+                    background: searchMode === 'address' 
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      : '#f0f0f0',
+                    color: searchMode === 'address' ? 'white' : '#666',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    fontWeight: searchMode === 'address' ? 'bold' : 'normal'
+                  }}
+                >
+                  ✍️ 주소 직접 입력
+                </button>
+              </div>
+
               <form onSubmit={handleSearch}>
-                <div style={{
-                  position: 'relative',
-                  marginBottom: '30px'
-                }}>
-                  <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="예: 삼성동 151-7번지"
-                    style={{
-                      width: '100%',
-                      padding: '20px 60px 20px 25px',
-                      fontSize: '18px',
-                      border: '3px solid #e0e0e0',
-                      borderRadius: '50px',
-                      outline: 'none',
-                      transition: 'all 0.3s',
-                      boxSizing: 'border-box'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#667eea';
-                      e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e0e0e0';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                    disabled={isSearching}
-                  />
-                  
-                  <button
-                    type="submit"
-                    disabled={isSearching || !address.trim()}
-                    style={{
-                      position: 'absolute',
-                      right: '5px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: '50px',
-                      height: '50px',
-                      borderRadius: '50%',
-                      border: 'none',
-                      background: isSearching || !address.trim()
-                        ? '#ccc'
-                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white',
-                      fontSize: '20px',
-                      cursor: isSearching || !address.trim() ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.3s',
-                      display: 'flex',
-                      alignItems: 'center',
+                {/* 지역 선택 모드 */}
+                {searchMode === 'region' ? (
+                  <div style={{ marginBottom: '30px' }}>
+                    <RegionSelector 
+                      onRegionSelect={(region) => setSelectedRegion(region)}
+                      initialRegion={selectedRegion}
+                    />
+                  </div>
+                ) : (
+                  /* 주소 입력 모드 */
+                  <div style={{
+                    position: 'relative',
+                    marginBottom: '30px'
+                  }}>
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="예: 서울특별시 강남구 삼성동"
+                      style={{
+                        width: '100%',
+                        padding: '20px 60px 20px 25px',
+                        fontSize: '18px',
+                        border: '3px solid #e0e0e0',
+                        borderRadius: '50px',
+                        outline: 'none',
+                        transition: 'all 0.3s',
+                        boxSizing: 'border-box'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#667eea';
+                        e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#e0e0e0';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                      disabled={isSearching}
+                    />
+                    
+                    <button
+                      type="submit"
+                      disabled={isSearching || !address.trim()}
+                      style={{
+                        position: 'absolute',
+                        right: '5px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: '50px',
+                        height: '50px',
+                        borderRadius: '50%',
+                        border: 'none',
+                        background: isSearching || !address.trim()
+                          ? '#ccc'
+                          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        fontSize: '20px',
+                        cursor: isSearching || !address.trim() ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.3s',
+                        display: 'flex',
+                        alignItems: 'center',
                       justifyContent: 'center'
                     }}
                     onMouseOver={(e) => {
@@ -194,7 +277,33 @@ export default function Home() {
                   >
                     {isSearching ? '⏳' : '🔍'}
                   </button>
-                </div>
+                  </div>
+                )}
+                
+                {/* 검색 버튼 (지역 선택 모드) */}
+                {searchMode === 'region' && (
+                  <button
+                    type="submit"
+                    disabled={isSearching || !selectedRegion.province}
+                    style={{
+                      width: '200px',
+                      padding: '15px 30px',
+                      fontSize: '18px',
+                      border: 'none',
+                      borderRadius: '50px',
+                      background: isSearching || !selectedRegion.province
+                        ? '#ccc'
+                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      cursor: isSearching || !selectedRegion.province ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.3s',
+                      margin: '0 auto',
+                      display: 'block'
+                    }}
+                  >
+                    {isSearching ? '⏳ 검색 중...' : '🔍 매물 검색'}
+                  </button>
+                )}
               </form>
 
               <div>
