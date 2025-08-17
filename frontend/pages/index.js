@@ -1,134 +1,318 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Head from 'next/head';
-import Dashboard from '../components/Dashboard';
-import AddressSearch from '../components/AddressSearch';
-import RealtimeSearch from '../components/RealtimeSearch';
 import SearchResults from '../components/SearchResults';
 
 export default function Home() {
-  const [data, setData] = useState(null);
+  const [address, setAddress] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
-  const [viewMode, setViewMode] = useState('search'); // 'search' or 'dashboard'
+  const [hasSearched, setHasSearched] = useState(false);
 
-  useEffect(() => {
-    // 정적 데이터 로드
-    const script = document.createElement('script');
-    script.src = '/data.js';
-    script.async = true;
-    script.onload = () => {
-      if (window.propertyData) {
-        setData(window.propertyData);
-      }
-    };
-    document.body.appendChild(script);
-  }, []);
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!address.trim()) return;
 
-  const handleSearch = (results) => {
-    setSearchResults(results);
+    setIsSearching(true);
+    setHasSearched(true);
+    
+    try {
+      // 실시간 검색 API 호출
+      const response = await fetch(`/api/realtime-search?address=${encodeURIComponent(address)}&platforms=all`);
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults({ error: '검색 중 오류가 발생했습니다.' });
+    } finally {
+      setIsSearching(false);
+    }
   };
+
+  const resetSearch = () => {
+    setSearchResults(null);
+    setHasSearched(false);
+    setAddress('');
+  };
+
+  const exampleAddresses = [
+    "삼성동 151-7",
+    "테헤란로 521",
+    "봉은사로 114",
+    "삼성동 159"
+  ];
 
   return (
     <>
       <Head>
-        <title>강남구 삼성1동 부동산 검색 시스템</title>
-        <meta name="description" content="주소로 검색하는 삼성1동 부동산 매물 시스템" />
+        <title>삼성동 부동산 검색</title>
+        <meta name="description" content="강남구 삼성동 부동산 매물 검색 서비스" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
       </Head>
       
       <main style={{ 
         fontFamily: "'Noto Sans KR', sans-serif",
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         minHeight: '100vh',
-        padding: '20px'
+        display: 'flex',
+        alignItems: hasSearched ? 'flex-start' : 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        paddingTop: hasSearched ? '40px' : '20px',
+        transition: 'all 0.5s ease'
       }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          {/* 헤더 */}
-          <header style={{
-            background: 'white',
-            borderRadius: '15px',
-            padding: '30px',
-            marginBottom: '30px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-          }}>
-            <h1 style={{
-              fontSize: '2.5rem',
-              fontWeight: '700',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              marginBottom: '10px'
+        <div style={{ 
+          width: '100%',
+          maxWidth: hasSearched ? '1200px' : '600px',
+          transition: 'all 0.5s ease'
+        }}>
+          {!hasSearched ? (
+            // 초기 화면 - 검색창만 크고 예쁘게
+            <div style={{
+              background: 'white',
+              borderRadius: '30px',
+              padding: '60px 40px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              textAlign: 'center'
             }}>
-              🏢 삼성1동 부동산 검색 시스템
-            </h1>
-            <p style={{ color: '#666', fontSize: '16px' }}>
-              주소를 입력하여 관련 매물 정보를 확인하세요
-            </p>
-          </header>
+              <h1 style={{
+                fontSize: '2.5rem',
+                fontWeight: '700',
+                marginBottom: '15px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                🏢 삼성동 부동산 검색
+              </h1>
+              
+              <p style={{
+                color: '#666',
+                fontSize: '18px',
+                marginBottom: '40px'
+              }}>
+                원하시는 주소를 입력하고 매물을 찾아보세요
+              </p>
 
-          {/* 모드 전환 버튼 */}
-          <div style={{
-            marginBottom: '20px',
-            display: 'flex',
-            gap: '10px'
-          }}>
-            <button
-              onClick={() => setViewMode('search')}
-              style={{
-                padding: '12px 24px',
-                background: viewMode === 'search' 
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                  : 'white',
-                color: viewMode === 'search' ? 'white' : '#666',
-                border: viewMode === 'search' ? 'none' : '2px solid #e0e0e0',
-                borderRadius: '10px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.3s'
-              }}
-            >
-              🔍 주소 검색
-            </button>
-            <button
-              onClick={() => setViewMode('dashboard')}
-              style={{
-                padding: '12px 24px',
-                background: viewMode === 'dashboard' 
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                  : 'white',
-                color: viewMode === 'dashboard' ? 'white' : '#666',
-                border: viewMode === 'dashboard' ? 'none' : '2px solid #e0e0e0',
-                borderRadius: '10px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.3s'
-              }}
-            >
-              📊 전체 대시보드
-            </button>
-          </div>
+              <form onSubmit={handleSearch}>
+                <div style={{
+                  position: 'relative',
+                  marginBottom: '30px'
+                }}>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="예: 삼성동 151-7번지"
+                    style={{
+                      width: '100%',
+                      padding: '20px 60px 20px 25px',
+                      fontSize: '18px',
+                      border: '3px solid #e0e0e0',
+                      borderRadius: '50px',
+                      outline: 'none',
+                      transition: 'all 0.3s',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#667eea';
+                      e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e0e0e0';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                    disabled={isSearching}
+                  />
+                  
+                  <button
+                    type="submit"
+                    disabled={isSearching || !address.trim()}
+                    style={{
+                      position: 'absolute',
+                      right: '5px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '50px',
+                      height: '50px',
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: isSearching || !address.trim()
+                        ? '#ccc'
+                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      fontSize: '20px',
+                      cursor: isSearching || !address.trim() ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.3s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onMouseOver={(e) => {
+                      if (!isSearching && address.trim()) {
+                        e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                    }}
+                  >
+                    {isSearching ? '⏳' : '🔍'}
+                  </button>
+                </div>
+              </form>
 
-          {/* 컨텐츠 영역 */}
-          {viewMode === 'search' ? (
-            <>
-              <RealtimeSearch onSearch={handleSearch} />
-              <SearchResults results={searchResults} />
-            </>
+              <div>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#999',
+                  marginBottom: '15px'
+                }}>
+                  빠른 검색:
+                </p>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  justifyContent: 'center'
+                }}>
+                  {exampleAddresses.map((example, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setAddress(example)}
+                      style={{
+                        padding: '10px 20px',
+                        fontSize: '14px',
+                        background: 'white',
+                        border: '2px solid #e0e0e0',
+                        borderRadius: '25px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        fontWeight: '500'
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.borderColor = '#667eea';
+                        e.target.style.background = '#667eea';
+                        e.target.style.color = 'white';
+                        e.target.style.transform = 'scale(1.05)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.borderColor = '#e0e0e0';
+                        e.target.style.background = 'white';
+                        e.target.style.color = 'black';
+                        e.target.style.transform = 'scale(1)';
+                      }}
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
-            data ? (
-              <Dashboard data={data} />
-            ) : (
+            // 검색 후 - 결과 표시
+            <>
               <div style={{
                 background: 'white',
-                borderRadius: '15px',
-                padding: '40px',
-                textAlign: 'center',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+                borderRadius: '20px',
+                padding: '25px',
+                marginBottom: '20px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
               }}>
-                <div style={{ fontSize: '24px', marginBottom: '10px' }}>⏳</div>
-                <div style={{ color: '#666' }}>데이터 로딩 중...</div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '15px'
+                }}>
+                  <button
+                    onClick={resetSearch}
+                    style={{
+                      padding: '10px 15px',
+                      background: 'white',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.borderColor = '#667eea';
+                      e.target.style.background = '#f5f5f5';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.borderColor = '#e0e0e0';
+                      e.target.style.background = 'white';
+                    }}
+                  >
+                    ← 새 검색
+                  </button>
+                  
+                  <form onSubmit={handleSearch} style={{ flex: 1 }}>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="주소 입력..."
+                        style={{
+                          width: '100%',
+                          padding: '12px 50px 12px 20px',
+                          fontSize: '16px',
+                          border: '2px solid #e0e0e0',
+                          borderRadius: '30px',
+                          outline: 'none',
+                          transition: 'all 0.3s'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                        onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+                        disabled={isSearching}
+                      />
+                      <button
+                        type="submit"
+                        disabled={isSearching || !address.trim()}
+                        style={{
+                          position: 'absolute',
+                          right: '5px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          width: '35px',
+                          height: '35px',
+                          borderRadius: '50%',
+                          border: 'none',
+                          background: isSearching || !address.trim()
+                            ? '#ccc'
+                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          color: 'white',
+                          cursor: isSearching || !address.trim() ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.3s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {isSearching ? '⏳' : '🔍'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
-            )
+              
+              {isSearching ? (
+                <div style={{
+                  background: 'white',
+                  borderRadius: '20px',
+                  padding: '60px',
+                  textAlign: 'center',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔍</div>
+                  <h3 style={{ color: '#667eea', marginBottom: '10px' }}>검색 중...</h3>
+                  <p style={{ color: '#666' }}>실시간 매물 정보를 가져오고 있습니다</p>
+                </div>
+              ) : (
+                <SearchResults results={searchResults} />
+              )}
+            </>
           )}
         </div>
       </main>
