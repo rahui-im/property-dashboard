@@ -68,9 +68,10 @@ export default async function handler(req, res) {
 
   const { address, dealYmd, type = 'trade' } = req.query;
   
-  // 현재 날짜를 기본값으로 (YYYYMM 형식)
+  // 현재 날짜를 기본값으로 (YYYYMM 형식) - 전월 데이터 조회 (당월 데이터는 아직 없을 수 있음)
   const currentDate = new Date();
-  const defaultDealYmd = dealYmd || `${currentDate.getFullYear()}${String(currentDate.getMonth()).padStart(2, '0')}`;
+  currentDate.setMonth(currentDate.getMonth() - 1); // 전월로 설정
+  const defaultDealYmd = dealYmd || `${currentDate.getFullYear()}${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
   
   // 주소에서 지역코드 찾기
   let lawdCd = '11680'; // 기본값: 강남구

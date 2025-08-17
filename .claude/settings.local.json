@@ -36,7 +36,8 @@
       "Bash(start http://localhost:3000)",
       "mcp__ide__getDiagnostics",
       "WebFetch(domain:www.data.go.kr)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(start http://localhost:3000/api/molit-trades?address=강남구)"
     ],
     "deny": [],
     "ask": [],
