@@ -119,7 +119,28 @@ async function searchNaver(address) {
   
   try {
     console.log('[Naver] 검색 시작:', address);
-    // 삼성동 중심 좌표 (주소에 따라 조정 가능)
+    
+    // Vercel 환경에서는 프록시 API 사용
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : 'https://property-dashboard-lime.vercel.app';
+      
+      const response = await fetch(`${baseUrl}/api/proxy-naver?address=${encodeURIComponent(address)}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.properties) {
+          console.log('[Naver] 프록시로 매물 수신:', data.properties.length);
+          return data.properties;
+        }
+      }
+      
+      // 프록시도 실패하면 Mock 데이터
+      return getMockNaverData(address);
+    }
+    
+    // 로컬 환경에서는 직접 API 호출
     const lat = 37.5172;
     const lng = 127.0473;
     const btm = lat - 0.01;
@@ -180,22 +201,12 @@ async function searchNaver(address) {
           collected_at: new Date().toISOString()
         };
         
-        // 주소 필터링 개선 - 모든 매물 포함
         properties.push(property);
-      }
-    } else {
-      console.error('[Naver] API 오류:', response.status, response.statusText);
-      // Vercel에서 CORS 문제 시 Mock 데이터 반환
-      if (process.env.NODE_ENV === 'production') {
-        return getMockNaverData(address);
       }
     }
   } catch (error) {
     console.error('[Naver] 검색 오류:', error.message);
-    // Vercel에서 오류 시 Mock 데이터 반환
-    if (process.env.NODE_ENV === 'production') {
-      return getMockNaverData(address);
-    }
+    return getMockNaverData(address);
   }
   
   return properties;
@@ -206,7 +217,24 @@ async function searchZigbang(address) {
   const properties = [];
   
   try {
-    // 직방 웹 API 사용 (Vercel에서 접근 가능한 공개 API)
+    // Vercel 환경에서는 프록시 API 사용
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : 'https://property-dashboard-lime.vercel.app';
+      
+      const response = await fetch(`${baseUrl}/api/proxy-zigbang?address=${encodeURIComponent(address)}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.properties) {
+          console.log('[Zigbang] 프록시로 매물 수신:', data.properties.length);
+          return data.properties;
+        }
+      }
+    }
+    
+    // 로컬 환경에서는 직접 API 호출
     const response = await fetch('https://apis.zigbang.com/v2/items?domain=zigbang&geohash=wydm6&zoom=15', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -256,7 +284,24 @@ async function searchDabang(address) {
   const properties = [];
   
   try {
-    // 다방 API 엔드포인트 (공개 API)
+    // Vercel 환경에서는 프록시 API 사용
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : 'https://property-dashboard-lime.vercel.app';
+      
+      const response = await fetch(`${baseUrl}/api/proxy-dabang?address=${encodeURIComponent(address)}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.properties) {
+          console.log('[Dabang] 프록시로 매물 수신:', data.properties.length);
+          return data.properties;
+        }
+      }
+    }
+    
+    // 로컬 환경에서는 직접 API 호출
     const response = await fetch('https://www.dabangapp.com/api/3/room/list/search-complex', {
       method: 'POST',
       headers: {

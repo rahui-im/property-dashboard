@@ -16,9 +16,9 @@ export default function Home() {
     setHasSearched(true);
     
     try {
-      // 실시간 검색 API 호출
+      // 실시간 검색 API 호출 - 네이버, 직방, 다방 동시 검색
       console.log('검색 시작:', address);
-      const response = await fetch(`/api/realtime-search?address=${encodeURIComponent(address)}&platforms=naver`);
+      const response = await fetch(`/api/realtime-search?address=${encodeURIComponent(address)}&platforms=naver,zigbang,dabang`);
       const data = await response.json();
       console.log('API 응답:', data);
       setSearchResults(data);

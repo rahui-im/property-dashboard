@@ -47,9 +47,23 @@ export default function SearchResults({ results }) {
       'naver': '#03C75A',
       'zigbang': '#FF6B00',
       'dabang': '#4A90E2',
-      'kb': '#FFD700'
+      'kb': '#FFD700',
+      'peterpan': '#9C27B0',
+      'speedbank': '#F44336'
     };
     return colors[platform] || '#666';
+  };
+  
+  const getPlatformName = (platform) => {
+    const names = {
+      'naver': '네이버',
+      'zigbang': '직방',
+      'dabang': '다방',
+      'kb': 'KB부동산',
+      'peterpan': '피터팬',
+      'speedbank': '스피드뱅크'
+    };
+    return names[platform] || platform?.toUpperCase();
   };
 
   return (
@@ -182,7 +196,7 @@ export default function SearchResults({ results }) {
                       fontWeight: 'bold',
                       marginRight: '10px'
                     }}>
-                      {property.platform?.toUpperCase()}
+                      {getPlatformName(property.platform)}
                     </span>
                     
                     {property.type && (
