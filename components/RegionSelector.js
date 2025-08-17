@@ -5,6 +5,7 @@ export default function RegionSelector({ onRegionSelect, initialRegion = {} }) {
   const [selectedProvince, setSelectedProvince] = useState(initialRegion.province || '');
   const [selectedDistrict, setSelectedDistrict] = useState(initialRegion.district || '');
   const [selectedDong, setSelectedDong] = useState(initialRegion.dong || '');
+  const [detailAddress, setDetailAddress] = useState(initialRegion.detail || '');
   
   const [districts, setDistricts] = useState([]);
   const [dongs, setDongs] = useState([]);
@@ -41,17 +42,19 @@ export default function RegionSelector({ onRegionSelect, initialRegion = {} }) {
         province: selectedProvince,
         district: selectedDistrict,
         dong: selectedDong,
+        detail: detailAddress,
         fullAddress: formatFullAddress()
       };
       onRegionSelect(region);
     }
-  }, [selectedProvince, selectedDistrict, selectedDong]);
+  }, [selectedProvince, selectedDistrict, selectedDong, detailAddress]);
 
   const formatFullAddress = () => {
     let address = '';
     if (selectedProvince) address += selectedProvince;
     if (selectedDistrict) address += ' ' + selectedDistrict;
     if (selectedDong) address += ' ' + selectedDong;
+    if (detailAddress) address += ' ' + detailAddress;
     return address.trim();
   };
 
@@ -71,6 +74,7 @@ export default function RegionSelector({ onRegionSelect, initialRegion = {} }) {
     setSelectedProvince('');
     setSelectedDistrict('');
     setSelectedDong('');
+    setDetailAddress('');
   };
 
   const provinces = getProvinces();
@@ -180,8 +184,44 @@ export default function RegionSelector({ onRegionSelect, initialRegion = {} }) {
         </select>
       </div>
 
+      {/* 세부 주소 입력 */}
+      {selectedDong && (
+        <div style={{ flex: '2', minWidth: '200px' }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: '5px',
+            fontSize: '14px',
+            color: '#666'
+          }}>
+            세부 주소 (선택사항)
+          </label>
+          <input
+            type="text"
+            value={detailAddress}
+            onChange={(e) => setDetailAddress(e.target.value)}
+            placeholder="예: 123-4, 아파트명, 건물명 등"
+            style={{
+              width: '100%',
+              padding: '10px',
+              fontSize: '16px',
+              border: '2px solid #e0e0e0',
+              borderRadius: '8px',
+              background: 'white',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#667eea';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e0e0e0';
+            }}
+          />
+        </div>
+      )}
+
       {/* 초기화 버튼 */}
-      {(selectedProvince || selectedDistrict || selectedDong) && (
+      {(selectedProvince || selectedDistrict || selectedDong || detailAddress) && (
         <div style={{ minWidth: '80px' }}>
           <label style={{ 
             display: 'block', 

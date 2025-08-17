@@ -168,19 +168,22 @@ async function searchNaver(address, queryLat, queryLng) {
         ? `https://${process.env.VERCEL_URL}` 
         : 'https://property-dashboard-lime.vercel.app';
       
-      const response = await fetch(`${baseUrl}/api/proxy-naver?address=${encodeURIComponent(address)}&lat=${lat}&lng=${lng}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.properties && data.properties.length > 0) {
-          console.log('[Naver] 프록시로 매물 수신:', data.properties.length);
-          return data.properties;
+      try {
+        const response = await fetch(`${baseUrl}/api/proxy-naver?address=${encodeURIComponent(address)}&lat=${lat}&lng=${lng}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.properties) {
+            console.log('[Naver] 프록시로 실제 매물 수신:', data.properties.length);
+            return data.properties;
+          }
         }
+      } catch (fetchError) {
+        console.error('[Naver] Vercel 프록시 에러:', fetchError.message);
       }
       
-      // 프록시도 실패하면 Mock 데이터로 fallback
-      console.log('[Naver] Vercel 프록시 실패 또는 빈 결과, Mock 데이터 사용');
-      // Mock 데이터로 계속 진행 (아래로 fallthrough)
+      // 실제 데이터를 가져오지 못한 경우에만 Mock 데이터 사용
+      console.log('[Naver] 실제 데이터 없음, Mock 데이터로 대체');
     }
     
     // 로컬 환경에서도 프록시 API 시도 (Vercel이 아닌 경우)
@@ -200,96 +203,13 @@ async function searchNaver(address, queryLat, queryLng) {
       }
     }
     
-    // 프록시 실패 또는 로컬 환경에서 Mock 데이터 반환
-    console.log('[Naver] Mock 데이터 사용');
-    
-    // Mock 데이터로 테스트 (항상 반환)
-    const mockProperties = [
-      {
-        id: `NAVER_MOCK_${Date.now()}_1`,
-        platform: 'naver',
-        title: '삼성동 아이파크',
-        building: '삼성동 아이파크',
-        address: fullAddress,
-        price: 150000,
-        price_string: '15억',
-        area: 84,
-        area_pyeong: 25,
-        floor: '10층',
-        type: '아파트',
-        trade_type: '매매',
-        lat: lat + 0.001,
-        lng: lng + 0.001,
-        description: '역세권, 한강조망',
-        url: 'https://m.land.naver.com',
-        collected_at: new Date().toISOString()
-      },
-      {
-        id: `NAVER_MOCK_${Date.now()}_2`,
-        platform: 'naver',
-        title: '삼성동 래미안',
-        building: '삼성동 래미안',
-        address: fullAddress,
-        price: 180000,
-        price_string: '18억',
-        area: 109,
-        area_pyeong: 33,
-        floor: '15층',
-        type: '아파트',
-        trade_type: '매매',
-        lat: lat - 0.001,
-        lng: lng + 0.002,
-        description: '학군 우수',
-        url: 'https://m.land.naver.com',
-        collected_at: new Date().toISOString()
-      },
-      {
-        id: `NAVER_MOCK_${Date.now()}_3`,
-        platform: 'naver',
-        title: '논현동 빌라',
-        building: '논현동 빌라',
-        address: fullAddress,
-        price: 50000,
-        price_string: '5억',
-        area: 60,
-        area_pyeong: 18,
-        floor: '3층',
-        type: '빌라',
-        trade_type: '전세',
-        lat: lat + 0.002,
-        lng: lng - 0.001,
-        description: '깨끗한 빌라',
-        url: 'https://m.land.naver.com',
-        collected_at: new Date().toISOString()
-      }
-    ];
-    
-    console.log('[Naver] Mock 데이터 추가:', mockProperties.length, '개');
-    return mockProperties;  // 직접 반환
+    // 실제 데이터가 없으면 빈 배열 반환
+    console.log('[Naver] 실제 API 호출 실패, 데이터 없음');
+    return [];
   } catch (error) {
     console.error('[Naver] 검색 오류:', error.message);
-    // 오류 발생시에도 기본 Mock 데이터 반환
-    return [
-      {
-        id: `NAVER_ERROR_MOCK_${Date.now()}`,
-        platform: 'naver',
-        title: '기본 매물',
-        building: '기본 빌딩',
-        address: address || '서울 강남구',
-        price: 100000,
-        price_string: '10억',
-        area: 84,
-        area_pyeong: 25,
-        floor: '5층',
-        type: '아파트',
-        trade_type: '매매',
-        lat: 37.5172,
-        lng: 127.0473,
-        description: '테스트 매물',
-        url: 'https://m.land.naver.com',
-        collected_at: new Date().toISOString()
-      }
-    ];
+    // 오류 발생시에도 빈 배열 반환
+    return [];
   }
 }
 
@@ -327,48 +247,9 @@ async function searchZigbang(address) {
       }
     }
     
-    // 프록시도 실패하면 Mock 데이터 사용
-    console.log('[Zigbang] Mock 데이터 사용');
-    
-    // Mock 데이터
-    const mockProperties = [
-      {
-        id: `ZIGBANG_MOCK_1`,
-        platform: 'zigbang',
-        title: '강남 오피스텔',
-        address: address,
-        price: 5000,
-        area: 33,
-        floor: '5층',
-        type: '오피스텔',
-        trade_type: '월세',
-        monthly_rent: 80,
-        lat: 37.5112,
-        lng: 127.0414,
-        description: '역세권 오피스텔',
-        url: 'https://zigbang.com',
-        collected_at: new Date().toISOString()
-      },
-      {
-        id: `ZIGBANG_MOCK_2`,
-        platform: 'zigbang',
-        title: '논현동 원룸',
-        address: address,
-        price: 3000,
-        area: 25,
-        floor: '3층',
-        type: '원룸',
-        trade_type: '월세',
-        monthly_rent: 60,
-        lat: 37.5115,
-        lng: 127.0420,
-        description: '깨끗한 원룸',
-        url: 'https://zigbang.com',
-        collected_at: new Date().toISOString()
-      }
-    ];
-    
-    properties.push(...mockProperties);
+    // 프록시도 실패하면 빈 배열 반환
+    console.log('[Zigbang] 실제 데이터 없음');
+    return [];
   } catch (error) {
     console.error('Zigbang search error:', error);
   }
@@ -410,48 +291,9 @@ async function searchDabang(address) {
       }
     }
     
-    // 프록시도 실패하면 Mock 데이터 사용
-    console.log('[Dabang] Mock 데이터 사용');
-    
-    // Mock 데이터
-    const mockProperties = [
-      {
-        id: `DABANG_MOCK_1`,
-        platform: 'dabang',
-        title: '논현동 투룸',
-        address: address,
-        price: 8000,
-        area: 45,
-        floor: '7층',
-        type: '투룸',
-        trade_type: '전세',
-        monthly_rent: 0,
-        lat: 37.5110,
-        lng: 127.0410,
-        description: '신축 투룸',
-        url: 'https://www.dabangapp.com',
-        collected_at: new Date().toISOString()
-      },
-      {
-        id: `DABANG_MOCK_2`,
-        platform: 'dabang',
-        title: '강남 원룸',
-        address: address,
-        price: 2000,
-        area: 20,
-        floor: '2층',
-        type: '원룸',
-        trade_type: '월세',
-        monthly_rent: 50,
-        lat: 37.5108,
-        lng: 127.0418,
-        description: '깨끗한 원룸',
-        url: 'https://www.dabangapp.com',
-        collected_at: new Date().toISOString()
-      }
-    ];
-    
-    properties.push(...mockProperties);
+    // 프록시도 실패하면 빈 배열 반환
+    console.log('[Dabang] 실제 데이터 없음');
+    return [];
   } catch (error) {
     console.error('Dabang search error:', error);
   }
@@ -561,53 +403,9 @@ async function searchPeterpan(address) {
 
 // 스피드뱅크 - 급매물 전문 플랫폼
 async function searchSpeedbank(address) {
-  const properties = [];
-  
-  try {
-    // 스피드뱅크 API (모의 데이터 - 실제 API 연동 시 교체 필요)
-    const mockData = [
-      {
-        id: 'SB001',
-        title: '삼성동 급매 아파트',
-        address: '서울 강남구 삼성동',
-        price: 150000,
-        area: 84,
-        floor: '15층',
-        type: '아파트',
-        trade_type: '매매',
-        description: '급매물, 가격협의 가능',
-        url: 'https://www.speedbank.co.kr'
-      }
-    ];
-    
-    for (const item of mockData) {
-      if (address.toLowerCase().split(' ').some(term => 
-        item.address.toLowerCase().includes(term)
-      )) {
-        const property = {
-          id: `SPEEDBANK_${item.id}`,
-          platform: 'speedbank',
-          title: item.title,
-          address: item.address,
-          price: item.price,
-          area: item.area,
-          floor: item.floor,
-          type: item.type,
-          trade_type: item.trade_type,
-          lat: 37.5172,
-          lng: 127.0473,
-          description: item.description,
-          url: item.url,
-          collected_at: new Date().toISOString()
-        };
-        properties.push(property);
-      }
-    }
-  } catch (error) {
-    console.error('Speedbank search error:', error);
-  }
-  
-  return properties;
+  // 스피드뱅크는 실제 API 연동 전까지 비활성화
+  console.log('[Speedbank] API 미연동 상태');
+  return [];
 }
 
 
