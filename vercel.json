@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "pages/api/realtime-search.js": {
+      "maxDuration": 30
+    }
+  }
+}

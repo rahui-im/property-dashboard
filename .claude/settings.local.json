@@ -26,7 +26,10 @@
       "Bash(grep:*)",
       "Bash(mv:*)",
       "Bash(tree:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(for dir in */)",
+      "Bash(done)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": [],

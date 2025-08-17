@@ -1,0 +1,26 @@
+{
+  "name": "samsung-property-dashboard",
+  "version": "1.0.0",
+  "description": "강남구 삼성1동 부동산 매물 대시보드",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "next": "14.0.4",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "recharts": "^2.10.4"
+  },
+  "devDependencies": {
+    "@types/node": "20.10.5",
+    "@types/react": "18.2.45",
+    "typescript": "5.3.3"
+  }
+}
