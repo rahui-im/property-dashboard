@@ -1,0 +1,111 @@
+# MCP 서버 설정
+mcp:
+  server:
+    host: localhost
+    port: 9001
+    cors_enabled: true
+    
+  # WebSocket 설정
+  websocket:
+    ping_interval: 30
+    ping_timeout: 10
+    max_connections: 100
+    
+# 수집기 설정
+collectors:
+  naver:
+    enabled: true
+    rate_limit: 2  # requests per second
+    max_retries: 3
+    timeout: 30
+    headless: true
+    
+  zigbang:
+    enabled: true
+    rate_limit: 3
+    max_retries: 3
+    timeout: 20
+    
+  dabang:
+    enabled: true
+    rate_limit: 3
+    max_retries: 3
+    timeout: 20
+    
+# 데이터베이스 설정
+database:
+  type: postgresql
+  host: localhost
+  port: 5432
+  database: realestate
+  username: ${DB_USERNAME}
+  password: ${DB_PASSWORD}
+  pool_size: 10
+  
+# 캐시 설정
+cache:
+  type: redis
+  host: localhost
+  port: 6379
+  db: 0
+  password: ${REDIS_PASSWORD}
+  ttl: 3600  # seconds
+  
+# 저장 설정
+storage:
+  data_dir: ./data
+  export_formats:
+    - json
+    - excel
+    - csv
+  
+# 로깅 설정
+logging:
+  level: INFO
+  file: logs/mcp_{time}.log
+  rotation: 1 day
+  retention: 7 days
+  
+# 알림 설정
+notification:
+  enabled: false
+  webhook_url: ${WEBHOOK_URL}
+  
+# 수집 설정
+collection:
+  default_max_items: 100
+  default_areas:
+    - 강남구
+    - 서초구
+    - 송파구
+  
+  # 수집 스케줄 (cron 형식)
+  schedule:
+    enabled: false
+    cron: "0 */6 * * *"  # 6시간마다
+    
+# 데이터 처리 설정
+processing:
+  # 중복 제거
+  deduplication:
+    enabled: true
+    check_fields:
+      - platform
+      - id
+      
+  # 유효성 검증
+  validation:
+    enabled: true
+    price_range:
+      min: 1000  # 1000만원
+      max: 5000000  # 500억원
+    area_range:
+      min: 10  # 10㎡
+      max: 1000  # 1000㎡
+      
+  # 이상치 탐지
+  anomaly_detection:
+    enabled: true
+    price_per_area:
+      min: 100  # 100만원/㎡
+      max: 5000  # 5000만원/㎡
