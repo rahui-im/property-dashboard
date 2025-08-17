@@ -2,6 +2,20 @@
   "functions": {
     "pages/api/realtime-search.js": {
       "maxDuration": 30
+    },
+    "pages/api/proxy-naver.js": {
+      "maxDuration": 30
+    },
+    "pages/api/proxy-zigbang.js": {
+      "maxDuration": 30
+    },
+    "pages/api/proxy-dabang.js": {
+      "maxDuration": 30
+    },
+    "pages/api/geocode.js": {
+      "maxDuration": 10
     }
-  }
+  },
+  "framework": "nextjs",
+  "regions": ["icn1"]
 }
