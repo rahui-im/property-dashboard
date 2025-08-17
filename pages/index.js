@@ -17,8 +17,10 @@ export default function Home() {
     
     try {
       // 실시간 검색 API 호출
-      const response = await fetch(`/api/realtime-search?address=${encodeURIComponent(address)}&platforms=all`);
+      console.log('검색 시작:', address);
+      const response = await fetch(`/api/realtime-search?address=${encodeURIComponent(address)}&platforms=naver`);
       const data = await response.json();
+      console.log('API 응답:', data);
       setSearchResults(data);
     } catch (error) {
       console.error('Search error:', error);

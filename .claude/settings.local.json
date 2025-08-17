@@ -29,7 +29,9 @@
       "Bash(touch:*)",
       "Bash(for dir in */)",
       "Bash(done)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(npm run dev:*)",
+      "Bash(start test_search.html)"
     ],
     "deny": [],
     "ask": [],
